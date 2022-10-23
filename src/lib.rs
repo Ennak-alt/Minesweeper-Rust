@@ -1,7 +1,7 @@
 use rand::Rng;
 
 #[derive(Clone, Debug)]
-enum FieldVal {
+pub enum FieldVal {
     BombField,
     SafeField(i64),
 }
@@ -71,6 +71,18 @@ impl Board {
                 ..self.get_field(row, col).unwrap()
             },
         );
+    }
+
+    pub fn show_field(&mut self, row: usize, col: usize) -> Option<FieldVal> {
+        self.update_vis(row, col, Visibility::Visible);
+        self.get_field_val(row, col)
+    }
+    pub fn all_fields_visible(&mut self) {
+        for rowi in 0..self.height {
+            for coli in 0..self.width {
+                self.update_vis(rowi, coli, Visibility::Visible);
+            }
+        }
     }
 
     pub fn new(width: usize, height: usize, bombs: usize) -> Result<Self, &'static str> {
