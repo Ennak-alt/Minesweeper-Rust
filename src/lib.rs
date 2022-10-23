@@ -14,8 +14,8 @@ enum Visibility {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Position {
-    row: usize,
-    col: usize,
+    pub row: usize,
+    pub col: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -31,7 +31,6 @@ pub struct Board {
     pub height: usize,
 }
 
-// TODO: position
 impl Board {
     fn get_field(&self, pos: Position) -> Option<Field> {
         if let Some(r) = self.board.get(pos.row) {
@@ -41,6 +40,7 @@ impl Board {
         }
         None
     }
+
     fn get_field_vis(&self, pos: Position) -> Option<Visibility> {
         if let Some(f) = self.get_field(pos) {
             Some(f.visibility)
@@ -48,6 +48,7 @@ impl Board {
             None
         }
     }
+
     fn get_field_type(&self, pos: Position) -> Option<FieldType> {
         if let Some(f) = self.get_field(pos) {
             Some(f.field_type)
@@ -56,22 +57,20 @@ impl Board {
         }
     }
 
-    fn update_field(
-        &mut self,
-        pos: Position,
-        new_field: Field,
-    ) -> Result<(), &'static str> {
+    fn update_field(&mut self, pos: Position, new_field: Field) -> Result<(), &'static str> {
         if pos.row > self.height - 1 || pos.col > self.width {
             return Err("Index out of bounds");
         }
-        *(self.board.get_mut(pos.row).unwrap().get_mut(pos.col).unwrap()) = new_field;
+        *(self
+            .board
+            .get_mut(pos.row)
+            .unwrap()
+            .get_mut(pos.col)
+            .unwrap()) = new_field;
         Ok(())
     }
-    fn update_field_vis(
-        &mut self,
-        pos: Position,
-        vis: Visibility,
-    ) -> Result<(), &'static str> {
+
+    fn update_field_vis(&mut self, pos: Position, vis: Visibility) -> Result<(), &'static str> {
         self.update_field(
             pos,
             Field {
@@ -80,13 +79,8 @@ impl Board {
             },
         )
     }
-    
-    // TODO: rename arguments
-    fn update_field_type(
-        &mut self,
-        pos: Position,
-        val: FieldType,
-    ) -> Result<(), &'static str> {
+
+    fn update_field_type(&mut self, pos: Position, val: FieldType) -> Result<(), &'static str> {
         self.update_field(
             pos,
             Field {
@@ -119,7 +113,7 @@ impl Board {
         }
         positions_around
     }
-    
+
     pub fn show_field(&mut self, pos: Position) -> Option<FieldType> {
         self.update_field_vis(pos, Visibility::Visible).unwrap();
         let field_type = self.get_field_type(pos);
@@ -129,7 +123,9 @@ impl Board {
                     if let Some(FieldType::SafeField(0)) = board.get_field_type(pos) {
                         board.update_field_vis(pos, Visibility::Visible).unwrap();
                         for a_pos in board.get_fields_around(pos) {
-                            show_zero_fields(board, a_pos);
+                            if let Some(Visibility::Hidden) = board.get_field_vis(a_pos) {
+                                show_zero_fields(board, a_pos);
+                            }
                         }
                     }
                 }
@@ -142,12 +138,26 @@ impl Board {
         }
         field_type
     }
+
     pub fn all_fields_visible(&mut self) {
         for row in 0..self.height {
             for col in 0..self.width {
-                self.update_field_vis(Position { row: row, col: col }, Visibility::Visible).unwrap();
+                self.update_field_vis(Position { row: row, col: col }, Visibility::Visible)
+                    .unwrap();
             }
         }
+    }
+
+    pub fn print_board(&self) {
+        for row in 0..self.height {
+            for col in 0..self.width {
+                let t = self.get_field(Position { row: row, col: col }).unwrap();
+                print!("({:?} ", t.visibility);
+                print!("{:?}) | ", t.field_type);
+            }
+            println!();
+        }
+        println!();
     }
 
     pub fn new(width: usize, height: usize, bombs: usize) -> Result<Self, &'static str> {
@@ -176,13 +186,21 @@ impl Board {
         for _ in 0..bombs {
             let row_index = row_indices.remove(rng.gen_range(0..row_indices.len()));
             let col_index = col_indices.remove(rng.gen_range(0..col_indices.len()));
-            new_board.update_field_type(Position { row: row_index, col: col_index }, FieldType::BombField).unwrap();
+            new_board
+                .update_field_type(
+                    Position {
+                        row: row_index,
+                        col: col_index,
+                    },
+                    FieldType::BombField,
+                )
+                .unwrap();
         }
 
         // update_field non-bomb-fields with numbers of bombs around
         for row in 0..height {
             for col in 0..width {
-                let pos = Position {row: row, col: col};
+                let pos = Position { row: row, col: col };
                 if let Some(FieldType::SafeField(_)) = new_board.get_field_type(pos) {
                     let mut bombs_around = 0;
                     for pos in new_board.get_fields_around(pos) {
@@ -191,7 +209,9 @@ impl Board {
                         }
                     }
                     if bombs_around != 0 {
-                        new_board.update_field_type(pos, FieldType::SafeField(bombs_around)).unwrap();
+                        new_board
+                            .update_field_type(pos, FieldType::SafeField(bombs_around))
+                            .unwrap();
                     }
                 }
             }
