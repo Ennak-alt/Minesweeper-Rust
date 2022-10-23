@@ -49,10 +49,14 @@ impl Board {
         }
     }
 
-    fn update(&mut self, row: usize, col: usize, new_field: Field) {
+    fn update(&mut self, row: usize, col: usize, new_field: Field) -> Result<(), &'static str> {
+        if row > self.height-1 || col > self.width {
+            return Err("Index out of bounds");
+        }
         *(self.board.get_mut(row).unwrap().get_mut(col).unwrap()) = new_field;
+        Ok(())
     }
-    fn update_val(&mut self, row: usize, col: usize, val: FieldType) {
+    fn update_val(&mut self, row: usize, col: usize, val: FieldType) -> Result<(), &'static str> {
         self.update(
             row,
             col,
@@ -60,9 +64,9 @@ impl Board {
                 FieldType: val,
                 ..self.get_field(row, col).unwrap()
             },
-        );
+        )
     }
-    fn update_vis(&mut self, row: usize, col: usize, vis: Visibility) {
+    fn update_vis(&mut self, row: usize, col: usize, vis: Visibility) -> Result<(), &'static str> {
         self.update(
             row,
             col,
@@ -70,7 +74,7 @@ impl Board {
                 Visibility: vis,
                 ..self.get_field(row, col).unwrap()
             },
-        );
+        )
     }
 
     pub fn show_field(&mut self, row: usize, col: usize) -> Option<FieldType> {
