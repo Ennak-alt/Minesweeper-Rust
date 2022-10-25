@@ -1,4 +1,6 @@
 use rand::Rng;
+use termion::{cursor::HideCursor, input::MouseTerminal, raw::RawTerminal};
+use std::io::{Write, Stdout, stdout};
 
 #[derive(Clone, Debug)]
 pub enum FieldType {
@@ -120,13 +122,19 @@ impl Board {
         match field_type {
             Some(FieldType::SafeField(0)) => {
                 fn show_zero_fields(board: &mut Board, pos: Position) -> () {
-                    if let Some(FieldType::SafeField(0)) = board.get_field_type(pos) {
-                        board.update_field_vis(pos, Visibility::Visible).unwrap();
-                        for a_pos in board.get_fields_around(pos) {
-                            if let Some(Visibility::Hidden) = board.get_field_vis(a_pos) {
-                                show_zero_fields(board, a_pos);
+                    match board.get_field_type(pos) {
+                        Some(FieldType::SafeField(0)) => { 
+                            board.update_field_vis(pos, Visibility::Visible).unwrap();
+                            for a_pos in board.get_fields_around(pos) {
+                                if let Some(Visibility::Hidden) = board.get_field_vis(a_pos) {
+                                    show_zero_fields(board, a_pos);
+                                }
                             }
-                        }
+                        },
+                        Some(FieldType::SafeField(_)) => {
+                            board.update_field_vis(pos, Visibility::Visible).unwrap();
+                        },
+                        _ => {}
                     }
                 }
                 show_zero_fields(self, pos);
@@ -146,18 +154,6 @@ impl Board {
                     .unwrap();
             }
         }
-    }
-
-    pub fn print_board(&self) {
-        for row in 0..self.height {
-            for col in 0..self.width {
-                let t = self.get_field(Position { row: row, col: col }).unwrap();
-                print!("({:?} ", t.visibility);
-                print!("{:?}) | ", t.field_type);
-            }
-            println!();
-        }
-        println!();
     }
 
     pub fn new(width: usize, height: usize, bombs: usize) -> Result<Self, &'static str> {
@@ -184,14 +180,16 @@ impl Board {
 
         // Create bomb-fields
         for _ in 0..bombs {
-            let row_index = row_indices.remove(rng.gen_range(0..row_indices.len()));
-            let col_index = col_indices.remove(rng.gen_range(0..col_indices.len()));
+            let mut pos: Vec<Position> = Vec::new();
+            for row in 0..height {
+                for col in 0..width {
+                    pos.push(Position {row: row, col: col});
+                }
+            }
+            let pos = pos.remove(rng.gen_range(0..pos.len()));
             new_board
                 .update_field_type(
-                    Position {
-                        row: row_index,
-                        col: col_index,
-                    },
+                    pos,
                     FieldType::BombField,
                 )
                 .unwrap();
@@ -217,5 +215,19 @@ impl Board {
             }
         }
         Ok(new_board)
+    }
+
+    pub fn print_board(&self, stdout: &mut HideCursor<MouseTerminal<RawTerminal<Stdout>>>) {
+        write!(stdout, "{}{}", termion::clear::All, termion::cursor::Goto(1, 1)).unwrap();
+        for row in 0..self.height {
+            for col in 0..self.width {
+                match self.get_field(Position { row: row, col: col }).unwrap() {
+                    Field { visibility: Visibility::Hidden, field_type: _} => write!(stdout, "⬜️").unwrap(),
+                    Field { visibility: _, field_type: FieldType::BombField } => write!(stdout, "💣").unwrap(),
+                    Field { visibility: _, field_type: FieldType::SafeField(n) } => write!(stdout, " {}", n).unwrap()
+                }
+            }
+            write!(stdout, "{}", termion::cursor::Goto(1,row as u16 +2)).unwrap();
+        }
     }
 }
