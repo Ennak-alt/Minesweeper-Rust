@@ -2,6 +2,8 @@ use rand::Rng;
 use termion::{cursor::HideCursor, input::MouseTerminal, raw::RawTerminal};
 use std::io::{Write, Stdout, stdout};
 
+pub type Term = HideCursor<MouseTerminal<RawTerminal<Stdout>>>;
+
 #[derive(Clone, Debug)]
 pub enum FieldType {
     BombField,
@@ -217,7 +219,7 @@ impl Board {
         Ok(new_board)
     }
 
-    pub fn print_board(&self, stdout: &mut HideCursor<MouseTerminal<RawTerminal<Stdout>>>) {
+    pub fn print_board(&self, stdout: &mut Term) {
         write!(stdout, "{}{}", termion::clear::All, termion::cursor::Goto(1, 1)).unwrap();
         for row in 0..self.height {
             for col in 0..self.width {
