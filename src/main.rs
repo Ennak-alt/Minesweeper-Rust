@@ -18,7 +18,7 @@ fn main() {
 
 #[derive(Debug, Clone, Copy)]
 enum MenuCommand {
-    Play(Position, usize),
+    Play(usize, usize, usize),
     Quit,
 }
 
@@ -37,28 +37,28 @@ fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
             8,
             (
                 "Easy: 9x9 and 10 bombs",
-                MenuCommand::Play(Position {row: 9, col: 9}, 10),
+                MenuCommand::Play(9, 9, 10),
             ),
         ),
         (
             9,
             (
                 "Medimum: 16x16 and 40 bombs",
-                MenuCommand::Play(Position {row: 16, col: 16}, 40),
+                MenuCommand::Play(16, 16, 40),
             ),
         ),
         (
             10,
             (
                 "Hard: 30x16 and 99 bombs",
-                MenuCommand::Play(Position {row: 30, col: 16}, 99),
+                MenuCommand::Play(30, 16, 99),
             ),
         ),
         (
             11,
             (
                 "Extreme: 24x30 and 180 bombs",
-                MenuCommand::Play(Position {row: 24, col: 30}, 180)
+                MenuCommand::Play(24, 30, 180),
             ),
         ),
         (12, ("Quit", MenuCommand::Quit)),
@@ -77,7 +77,7 @@ fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
             "{}{}",
             termion::cursor::Goto(
                 (terminal_size().unwrap().0 as u16 - item.len() as u16) / 2,
-                i + (terminal_size().unwrap().1 as u16) / 3 
+                i + (terminal_size().unwrap().1 as u16) / 3
             ),
             item
         )
@@ -107,7 +107,8 @@ fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
             Event::Key(Key::Char('q')) => break,
             Event::Mouse(me) => match me {
                 MouseEvent::Press(MouseButton::Left, _, y) => {
-                    if let Some(h) = menu_items.get(&(y - (terminal_size().unwrap().1 as u16) / 3)) {
+                    if let Some(h) = menu_items.get(&(y - (terminal_size().unwrap().1 as u16) / 3))
+                    {
                         n = h.1;
                         break;
                     }
@@ -118,7 +119,7 @@ fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
         }
     }
     match n {
-        MenuCommand::Play(p, b) => game_loop(stdin, stdout, Board::new(p.col, p.row, b).unwrap()),
+        MenuCommand::Play(width, height, bombs) => game_loop(stdin, stdout, Board::new(width, height, bombs).unwrap()),
         MenuCommand::Quit => {}
     }
 }
@@ -140,10 +141,15 @@ fn game_loop(stdin: &mut Stdin, stdout: &mut Term, mut board: Board) {
                             if let FieldType::BombField = field_type {
                                 board.all_fields_visible();
                                 board.print_board(stdout);
-                                write!(stdout, "You lost {}", termion::cursor::Goto(1, board.height as u16 + 2)).unwrap();
+                                write!(
+                                    stdout,
+                                    "You lost {}",
+                                    termion::cursor::Goto(1, board.height as u16 + 2)
+                                )
+                                .unwrap();
                                 stdout.flush().unwrap();
                                 break;
-                            } 
+                            }
                         }
                     }
                     _ => (),
