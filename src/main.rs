@@ -1,51 +1,116 @@
 extern crate termion;
 
-use mine_sweeper::{Board, Position, Term};
-use termion::event::{Key, Event, MouseEvent, MouseButton};
-use termion::input::{TermRead, MouseTerminal};
+use mine_sweeper::{Board, FieldType, Position, Term};
+use std::collections::HashMap;
+use std::io::{stdin, stdout, Stdin, Write};
+use termion::event::{Event, Key, MouseButton, MouseEvent};
+use termion::input::{MouseTerminal, TermRead};
 use termion::raw::IntoRawMode;
-use std::fmt::write;
-use std::io::{Write, stdout, stdin, Stdin};
-use termion::{color, terminal_size};
-
+use termion::terminal_size;
 
 fn main() {
     let mut stdin = stdin();
-    let mut stdout = 
+    let mut stdout =
         termion::cursor::HideCursor::from(MouseTerminal::from(stdout().into_raw_mode().unwrap()));
-
-    game_loop(&mut stdin, &mut stdout, Board::new(4,4, 1).unwrap())
+    //start_menu(&mut stdin, &mut stdout);
+    game_loop(&mut stdin, &mut stdout, Board::new(9, 9, 10).unwrap())
 }
 
-// fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
-//     let menu_items: Vec<&str> = vec![
-//         "Easy: 9x9 and 10 bombs",
-//         "Medimum: 16x16 and 40 bombs",
-//         "Hard: 30x16 and 99 bombs",
-//         "Extreme: 24x30 and 180 bombs"
-//     ];
-//     fn print_menu(menu_items: Vec<&str>) {
+enum MenuCommand {
+    Play(Board),
+    Quit,
+}
 
-//     }
-//     for c in stdin.events() {
-//         let evt = c.unwrap();
-//         match evt {
-//             Event::Key(Key::Char('q')) => break,
-//             Event::Mouse(me) => {
-//                 match me {
-//                     MouseEvent::Press(MouseButton::Left, x, y) => {
-//                         board.show_field(Position {row: ((y-1)) as usize, col: ((x-1)/2) as usize});
-//                         board.print_board(stdout);
-//                     },
-//                     _ => (),
-//                 }
-//                 board.print_board(stdout);
-//             }
-//             _ => {}
-//         }
-//         stdout.flush().unwrap();
-//     }
-// }
+type MenuItem = (&'static str, MenuCommand);
+
+fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
+    let s = [
+        r#" __    __   __   __   __   ______   ______   __     __   ______   ______   ______  ______   ______   "#,
+        r#"/\ "-./  \ /\ \ /\ "-.\ \ /\  ___\ /\  ___\ /\ \  _ \ \ /\  ___\ /\  ___\ /\  == \/\  ___\ /\  == \  "#,
+        r#"\ \ \-./\ \\ \ \\ \ \-.  \\ \  __\ \ \___  \\ \ \/ ".\ \\ \  __\ \ \  __\ \ \  _-/\ \  __\ \ \  __<  "#,
+        r#" \ \_\ \ \_\\ \_\\ \_\\"\_\\ \_____\\/\_____\\ \__/".~\_\\ \_____\\ \_____\\ \_\   \ \_____\\ \_\ \_\"#,
+        r#"  \/_/  \/_/ \/_/ \/_/ \/_/ \/_____/ \/_____/ \/_/   \/_/ \/_____/ \/_____/ \/_/    \/_____/ \/_/ /_/"#,
+    ];
+    let menu_items: HashMap<u16, MenuItem> = HashMap::from([
+        (
+            8,
+            (
+                "Easy: 9x9 and 10 bombs",
+                MenuCommand::Play(Board::new(9, 9, 10).unwrap()),
+            ),
+        ),
+        (
+            9,
+            (
+                "Medimum: 16x16 and 40 bombs",
+                MenuCommand::Play(Board::new(16, 16, 40).unwrap()),
+            ),
+        ),
+        (
+            10,
+            (
+                "Hard: 30x16 and 99 bombs",
+                MenuCommand::Play(Board::new(30, 16, 99).unwrap()),
+            ),
+        ),
+        (
+            11,
+            (
+                "Extreme: 24x30 and 180 bombs",
+                MenuCommand::Play(Board::new(24, 30, 180).unwrap()),
+            ),
+        ),
+        (12, ("Quit", MenuCommand::Quit)),
+    ]);
+    write!(
+        stdout,
+        "{}{}",
+        termion::clear::All,
+        termion::cursor::Goto(1, 1)
+    )
+    .unwrap();
+    let mut i = 1;
+    for item in s {
+        write!(
+            stdout,
+            "{}{}",
+            termion::cursor::Goto(
+                (terminal_size().unwrap().0 as u16 - item.len() as u16) / 2,
+                i + (terminal_size().unwrap().1 as u16) / 3
+            ),
+            item
+        )
+        .unwrap();
+        i += 1;
+    }
+    write!(stdout, "{}", termion::cursor::Goto(1, i)).unwrap();
+    for item in menu_items {
+        let (row, (menustr, command)) = item;
+        write!(
+            stdout,
+            "{}< {} >",
+            termion::cursor::Goto(
+                (terminal_size().unwrap().0 as u16 - menustr.len() as u16) / 2,
+                row + (terminal_size().unwrap().1 as u16) / 3
+            ),
+            menustr
+        )
+        .unwrap();
+    }
+    write!(stdout, "{}", termion::cursor::Goto(1, 13)).unwrap();
+    stdout.flush().unwrap();
+    for c in stdin.events() {
+        let evt = c.unwrap();
+        match evt {
+            Event::Key(Key::Char('q')) => break,
+            Event::Mouse(me) => match me {
+                MouseEvent::Press(MouseButton::Left, x, y) => {}
+                _ => (),
+            },
+            _ => {}
+        }
+    }
+}
 
 fn game_loop(stdin: &mut Stdin, stdout: &mut Term, mut board: Board) {
     board.print_board(stdout);
@@ -57,9 +122,18 @@ fn game_loop(stdin: &mut Stdin, stdout: &mut Term, mut board: Board) {
             Event::Mouse(me) => {
                 match me {
                     MouseEvent::Press(MouseButton::Left, x, y) => {
-                        board.show_field(Position {row: ((y-1)) as usize, col: ((x-1)/2) as usize});
-                        board.print_board(stdout);
-                    },
+                        if let Some(field_type) = board.show_field(Position {
+                            row: (y - 1) as usize,
+                            col: ((x - 1) / 2) as usize,
+                        }) {
+                            if let FieldType::BombField = field_type {
+                                board.print_board(stdout);
+                                write!(stdout, "You lost!");
+                            } else {
+                                board.print_board(stdout);
+                            }
+                        }
+                    }
                     _ => (),
                 }
                 board.print_board(stdout);

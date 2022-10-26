@@ -1,6 +1,6 @@
 use rand::Rng;
+use std::io::{stdout, Stdout, Write};
 use termion::{cursor::HideCursor, input::MouseTerminal, raw::RawTerminal};
-use std::io::{Write, Stdout, stdout};
 
 pub type Term = HideCursor<MouseTerminal<RawTerminal<Stdout>>>;
 
@@ -62,15 +62,12 @@ impl Board {
     }
 
     fn update_field(&mut self, pos: Position, new_field: Field) -> Result<(), &'static str> {
-        if pos.row > self.height - 1 || pos.col > self.width {
-            return Err("Index out of bounds");
-        }
         *(self
             .board
             .get_mut(pos.row)
-            .unwrap()
+            .ok_or("Row index out of bounds.")?
             .get_mut(pos.col)
-            .unwrap()) = new_field;
+            .ok_or("Collumn index out of bounds.")?) = new_field;
         Ok(())
     }
 
@@ -79,7 +76,7 @@ impl Board {
             pos,
             Field {
                 visibility: vis,
-                ..self.get_field(pos).unwrap()
+                ..self.get_field(pos).ok_or("Out of bounds.")?
             },
         )
     }
@@ -89,7 +86,7 @@ impl Board {
             pos,
             Field {
                 field_type: val,
-                ..self.get_field(pos).unwrap()
+                ..self.get_field(pos).ok_or("Out of bounds")?
             },
         )
     }
@@ -119,27 +116,28 @@ impl Board {
     }
 
     pub fn show_field(&mut self, pos: Position) -> Option<FieldType> {
-        self.update_field_vis(pos, Visibility::Visible).unwrap();
+        self.update_field_vis(pos, Visibility::Visible).ok()?;
         let field_type = self.get_field_type(pos);
         match field_type {
             Some(FieldType::SafeField(0)) => {
-                fn show_zero_fields(board: &mut Board, pos: Position) -> () {
+                fn show_zero_fields(board: &mut Board, pos: Position) -> Result<(), &'static str> {
                     match board.get_field_type(pos) {
-                        Some(FieldType::SafeField(0)) => { 
-                            board.update_field_vis(pos, Visibility::Visible).unwrap();
+                        Some(FieldType::SafeField(0)) => {
+                            board.update_field_vis(pos, Visibility::Visible)?;
                             for a_pos in board.get_fields_around(pos) {
                                 if let Some(Visibility::Hidden) = board.get_field_vis(a_pos) {
-                                    show_zero_fields(board, a_pos);
+                                    show_zero_fields(board, a_pos)?;
                                 }
                             }
-                        },
+                        }
                         Some(FieldType::SafeField(_)) => {
                             board.update_field_vis(pos, Visibility::Visible).unwrap();
-                        },
+                        }
                         _ => {}
                     }
+                    Ok(())
                 }
-                show_zero_fields(self, pos);
+                show_zero_fields(self, pos).ok()?;
             }
             Some(FieldType::BombField) | Some(FieldType::SafeField(_)) => {
                 self.update_field_vis(pos, Visibility::Visible).unwrap();
@@ -176,8 +174,6 @@ impl Board {
             width: width,
             height: height,
         };
-        let mut row_indices: Vec<usize> = (0..height).collect();
-        let mut col_indices: Vec<usize> = (0..width).collect();
         let mut rng = rand::thread_rng();
 
         // Create bomb-fields
@@ -185,15 +181,12 @@ impl Board {
             let mut pos: Vec<Position> = Vec::new();
             for row in 0..height {
                 for col in 0..width {
-                    pos.push(Position {row: row, col: col});
+                    pos.push(Position { row: row, col: col });
                 }
             }
             let pos = pos.remove(rng.gen_range(0..pos.len()));
             new_board
-                .update_field_type(
-                    pos,
-                    FieldType::BombField,
-                )
+                .update_field_type(pos, FieldType::BombField)
                 .unwrap();
         }
 
@@ -220,16 +213,31 @@ impl Board {
     }
 
     pub fn print_board(&self, stdout: &mut Term) {
-        write!(stdout, "{}{}", termion::clear::All, termion::cursor::Goto(1, 1)).unwrap();
+        write!(
+            stdout,
+            "{}{}",
+            termion::clear::All,
+            termion::cursor::Goto(1, 1)
+        )
+        .unwrap();
         for row in 0..self.height {
             for col in 0..self.width {
                 match self.get_field(Position { row: row, col: col }).unwrap() {
-                    Field { visibility: Visibility::Hidden, field_type: _} => write!(stdout, "⬜️").unwrap(),
-                    Field { visibility: _, field_type: FieldType::BombField } => write!(stdout, "💣").unwrap(),
-                    Field { visibility: _, field_type: FieldType::SafeField(n) } => write!(stdout, " {}", n).unwrap()
+                    Field {
+                        visibility: Visibility::Hidden,
+                        field_type: _,
+                    } => write!(stdout, "⬜️").unwrap(),
+                    Field {
+                        visibility: _,
+                        field_type: FieldType::BombField,
+                    } => write!(stdout, "💣").unwrap(),
+                    Field {
+                        visibility: _,
+                        field_type: FieldType::SafeField(n),
+                    } => write!(stdout, " {}", n).unwrap(),
                 }
             }
-            write!(stdout, "{}", termion::cursor::Goto(1,row as u16 +2)).unwrap();
+            write!(stdout, "{}", termion::cursor::Goto(1, row as u16 + 2)).unwrap();
         }
     }
 }
