@@ -1,5 +1,5 @@
 use rand::Rng;
-use std::io::{stdout, Stdout, Write};
+use std::io::{Stdout, Write};
 use termion::{cursor::HideCursor, input::MouseTerminal, raw::RawTerminal};
 
 pub type Term = HideCursor<MouseTerminal<RawTerminal<Stdout>>>;

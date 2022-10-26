@@ -106,7 +106,7 @@ fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
         match evt {
             Event::Key(Key::Char('q')) => break,
             Event::Mouse(me) => match me {
-                MouseEvent::Press(MouseButton::Left, x, y) => {
+                MouseEvent::Press(MouseButton::Left, _, y) => {
                     if let Some(h) = menu_items.get(&(y - (terminal_size().unwrap().1 as u16) / 3)) {
                         n = h.1;
                         break;
