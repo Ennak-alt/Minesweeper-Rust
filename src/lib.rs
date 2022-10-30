@@ -116,28 +116,27 @@ impl Board {
     }
 
     pub fn show_field(&mut self, pos: Position) -> Option<FieldType> {
-        self.update_field_vis(pos, Visibility::Visible).ok();
         let field_type = self.get_field_type(pos);
         match field_type {
             Some(FieldType::SafeField(0)) => {
-                fn show_zero_fields(board: &mut Board, pos: Position) -> Result<(), &'static str> {
+                self.update_field_vis(pos, Visibility::Visible).unwrap();
+                fn show_zero_fields(board: &mut Board, pos: Position) {
                     match board.get_field_type(pos) {
                         Some(FieldType::SafeField(0)) => {
-                            board.update_field_vis(pos, Visibility::Visible)?;
+                            board.update_field_vis(pos, Visibility::Visible).unwrap();
                             for a_pos in board.get_fields_around(pos) {
                                 if let Some(Visibility::Hidden) = board.get_field_vis(a_pos) {
-                                    show_zero_fields(board, a_pos)?;
+                                    show_zero_fields(board, a_pos);
                                 }
                             }
                         }
                         Some(FieldType::SafeField(_)) => {
-                            board.update_field_vis(pos, Visibility::Visible)?;
+                            board.update_field_vis(pos, Visibility::Visible).unwrap();
                         }
                         _ => {}
                     }
-                    Ok(())
                 }
-                show_zero_fields(self, pos).ok();
+                show_zero_fields(self, pos);
             }
             Some(FieldType::BombField) | Some(FieldType::SafeField(_)) => {
                 self.update_field_vis(pos, Visibility::Visible).unwrap();
@@ -177,13 +176,13 @@ impl Board {
         let mut rng = rand::thread_rng();
 
         // Create bomb-fields
-        for _ in 0..bombs {
-            let mut pos: Vec<Position> = Vec::new();
-            for row in 0..height {
-                for col in 0..width {
-                    pos.push(Position { row: row, col: col });
-                }
+        let mut pos: Vec<Position> = Vec::new();
+        for row in 0..height {
+            for col in 0..width {
+                pos.push(Position { row: row, col: col });
             }
+        }
+        for _ in 0..bombs {
             let pos = pos.remove(rng.gen_range(0..pos.len()));
             new_board
                 .update_field_type(pos, FieldType::BombField)
