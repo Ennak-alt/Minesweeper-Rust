@@ -62,15 +62,12 @@ impl Board {
     }
 
     fn update_field(&mut self, pos: Position, new_field: Field) -> Result<(), &'static str> {
-        if pos.row > self.height - 1 || pos.col > self.width {
-            return Err("Index out of bounds");
-        }
         *(self
             .board
             .get_mut(pos.row)
-            .unwrap()
+            .ok_or("row index out of bounds.")?
             .get_mut(pos.col)
-            .unwrap()) = new_field;
+            .ok_or("collumn index out of bounds.")?) = new_field;
         Ok(())
     }
 
@@ -79,7 +76,7 @@ impl Board {
             pos,
             Field {
                 visibility: vis,
-                ..self.get_field(pos).unwrap()
+                ..self.get_field(pos).ok_or("Out of bounds.")?
             },
         )
     }
@@ -89,7 +86,7 @@ impl Board {
             pos,
             Field {
                 field_type: val,
-                ..self.get_field(pos).unwrap()
+                ..self.get_field(pos).ok_or("Out of bounds.")?
             },
         )
     }
@@ -119,27 +116,28 @@ impl Board {
     }
 
     pub fn show_field(&mut self, pos: Position) -> Option<FieldType> {
-        self.update_field_vis(pos, Visibility::Visible).unwrap();
+        self.update_field_vis(pos, Visibility::Visible).ok();
         let field_type = self.get_field_type(pos);
         match field_type {
             Some(FieldType::SafeField(0)) => {
-                fn show_zero_fields(board: &mut Board, pos: Position) -> () {
+                fn show_zero_fields(board: &mut Board, pos: Position) -> Result<(), &'static str> {
                     match board.get_field_type(pos) {
                         Some(FieldType::SafeField(0)) => {
-                            board.update_field_vis(pos, Visibility::Visible).unwrap();
+                            board.update_field_vis(pos, Visibility::Visible)?;
                             for a_pos in board.get_fields_around(pos) {
                                 if let Some(Visibility::Hidden) = board.get_field_vis(a_pos) {
-                                    show_zero_fields(board, a_pos);
+                                    show_zero_fields(board, a_pos)?;
                                 }
                             }
                         }
                         Some(FieldType::SafeField(_)) => {
-                            board.update_field_vis(pos, Visibility::Visible).unwrap();
+                            board.update_field_vis(pos, Visibility::Visible)?;
                         }
                         _ => {}
                     }
+                    Ok(())
                 }
-                show_zero_fields(self, pos);
+                show_zero_fields(self, pos).ok();
             }
             Some(FieldType::BombField) | Some(FieldType::SafeField(_)) => {
                 self.update_field_vis(pos, Visibility::Visible).unwrap();
