@@ -1,6 +1,6 @@
 use rand::Rng;
 use std::io::{Stdout, Write};
-use termion::{cursor::HideCursor, input::MouseTerminal, raw::RawTerminal};
+use termion::{color, cursor::HideCursor, input::MouseTerminal, raw::RawTerminal};
 
 pub type Term = HideCursor<MouseTerminal<RawTerminal<Stdout>>>;
 
@@ -62,12 +62,15 @@ impl Board {
     }
 
     fn update_field(&mut self, pos: Position, new_field: Field) -> Result<(), &'static str> {
+        if pos.row > self.height - 1 || pos.col > self.width {
+            return Err("Index out of bounds");
+        }
         *(self
             .board
             .get_mut(pos.row)
-            .ok_or("Row index out of bounds.")?
+            .unwrap()
             .get_mut(pos.col)
-            .ok_or("Collumn index out of bounds.")?) = new_field;
+            .unwrap()) = new_field;
         Ok(())
     }
 
@@ -76,7 +79,7 @@ impl Board {
             pos,
             Field {
                 visibility: vis,
-                ..self.get_field(pos).ok_or("Out of bounds.")?
+                ..self.get_field(pos).unwrap()
             },
         )
     }
@@ -86,7 +89,7 @@ impl Board {
             pos,
             Field {
                 field_type: val,
-                ..self.get_field(pos).ok_or("Out of bounds")?
+                ..self.get_field(pos).unwrap()
             },
         )
     }
@@ -116,17 +119,17 @@ impl Board {
     }
 
     pub fn show_field(&mut self, pos: Position) -> Option<FieldType> {
-        self.update_field_vis(pos, Visibility::Visible).ok()?;
+        self.update_field_vis(pos, Visibility::Visible).unwrap();
         let field_type = self.get_field_type(pos);
         match field_type {
             Some(FieldType::SafeField(0)) => {
-                fn show_zero_fields(board: &mut Board, pos: Position) -> Result<(), &'static str> {
+                fn show_zero_fields(board: &mut Board, pos: Position) -> () {
                     match board.get_field_type(pos) {
                         Some(FieldType::SafeField(0)) => {
-                            board.update_field_vis(pos, Visibility::Visible)?;
+                            board.update_field_vis(pos, Visibility::Visible).unwrap();
                             for a_pos in board.get_fields_around(pos) {
                                 if let Some(Visibility::Hidden) = board.get_field_vis(a_pos) {
-                                    show_zero_fields(board, a_pos)?;
+                                    show_zero_fields(board, a_pos);
                                 }
                             }
                         }
@@ -135,9 +138,8 @@ impl Board {
                         }
                         _ => {}
                     }
-                    Ok(())
                 }
-                show_zero_fields(self, pos).ok()?;
+                show_zero_fields(self, pos);
             }
             Some(FieldType::BombField) | Some(FieldType::SafeField(_)) => {
                 self.update_field_vis(pos, Visibility::Visible).unwrap();
@@ -234,10 +236,81 @@ impl Board {
                     Field {
                         visibility: _,
                         field_type: FieldType::SafeField(n),
-                    } => write!(stdout, " {}", n).unwrap(),
+                    } => Self::print_num_clr(stdout, n as usize),
                 }
             }
             write!(stdout, "{}", termion::cursor::Goto(1, row as u16 + 2)).unwrap();
+        }
+    }
+
+    pub fn print_num_clr(stdout: &mut Term, num: usize) {
+        match num {
+            0 => write!(stdout, "  ",).unwrap(),
+            1 => write!(
+                stdout,
+                "{} {}{}",
+                color::Fg(color::Blue),
+                num,
+                color::Fg(color::Reset)
+            )
+            .unwrap(),
+            2 => write!(
+                stdout,
+                "{} {}{}",
+                color::Fg(color::Green),
+                num,
+                color::Fg(color::Reset)
+            )
+            .unwrap(),
+            3 => write!(
+                stdout,
+                "{} {}{}",
+                color::Fg(color::LightRed),
+                num,
+                color::Fg(color::Reset)
+            )
+            .unwrap(),
+            4 => write!(
+                stdout,
+                "{} {}{}",
+                color::Fg(color::Magenta),
+                num,
+                color::Fg(color::Reset)
+            )
+            .unwrap(),
+            5 => write!(
+                stdout,
+                "{} {}{}",
+                color::Fg(color::Red),
+                num,
+                color::Fg(color::Reset)
+            )
+            .unwrap(),
+            6 => write!(
+                stdout,
+                "{} {}{}",
+                color::Fg(color::Cyan),
+                num,
+                color::Fg(color::Reset)
+            )
+            .unwrap(),
+            7 => write!(
+                stdout,
+                "{} {}{}",
+                color::Fg(color::Black),
+                num,
+                color::Fg(color::Reset)
+            )
+            .unwrap(),
+            8 => write!(
+                stdout,
+                "{} {}{}",
+                color::Fg(color::Yellow),
+                num,
+                color::Fg(color::Reset)
+            )
+            .unwrap(),
+            _ => write!(stdout, " {}", num).unwrap(),
         }
     }
 }
