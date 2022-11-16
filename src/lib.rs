@@ -1,6 +1,6 @@
 use rand::Rng;
 use std::io::{Stdout, Write};
-use termion::{color, cursor::HideCursor, input::MouseTerminal, raw::RawTerminal};
+use termion::{color::{self, Color}, cursor::HideCursor, input::MouseTerminal, raw::RawTerminal};
 
 pub type Term = HideCursor<MouseTerminal<RawTerminal<Stdout>>>;
 
@@ -241,73 +241,27 @@ impl Board {
     }
 
     pub fn print_num_clr(stdout: &mut Term, num: usize) {
+        fn write_num<C: Color + Copy>(stdout: &mut Term, num: usize, color: C) {
+            write!(
+                stdout,
+                "{}{:2}{}",
+                color::Fg(color),
+                num,
+                color::Fg(color)
+            )
+            .unwrap()
+        }
         match num {
             0 => write!(stdout, "  ",).unwrap(),
-            1 => write!(
-                stdout,
-                "{} {}{}",
-                color::Fg(color::Blue),
-                num,
-                color::Fg(color::Reset)
-            )
-            .unwrap(),
-            2 => write!(
-                stdout,
-                "{} {}{}",
-                color::Fg(color::Green),
-                num,
-                color::Fg(color::Reset)
-            )
-            .unwrap(),
-            3 => write!(
-                stdout,
-                "{} {}{}",
-                color::Fg(color::LightRed),
-                num,
-                color::Fg(color::Reset)
-            )
-            .unwrap(),
-            4 => write!(
-                stdout,
-                "{} {}{}",
-                color::Fg(color::Magenta),
-                num,
-                color::Fg(color::Reset)
-            )
-            .unwrap(),
-            5 => write!(
-                stdout,
-                "{} {}{}",
-                color::Fg(color::Red),
-                num,
-                color::Fg(color::Reset)
-            )
-            .unwrap(),
-            6 => write!(
-                stdout,
-                "{} {}{}",
-                color::Fg(color::Cyan),
-                num,
-                color::Fg(color::Reset)
-            )
-            .unwrap(),
-            7 => write!(
-                stdout,
-                "{} {}{}",
-                color::Fg(color::Black),
-                num,
-                color::Fg(color::Reset)
-            )
-            .unwrap(),
-            8 => write!(
-                stdout,
-                "{} {}{}",
-                color::Fg(color::Yellow),
-                num,
-                color::Fg(color::Reset)
-            )
-            .unwrap(),
-            _ => write!(stdout, " {}", num).unwrap(),
+            1 => write_num(stdout, num, color::Blue),
+            2 => write_num(stdout, num, color::Green),
+            3 => write_num(stdout, num, color::LightRed),
+            4 => write_num(stdout, num, color::Magenta),
+            5 => write_num(stdout, num, color::Red),
+            6 => write_num(stdout, num, color::Cyan),
+            7 => write_num(stdout, num, color::White),
+            8 => write_num(stdout, num, color::Yellow),
+            _ => write!(stdout, "{:2}", num).unwrap(),
         }
     }
 }
