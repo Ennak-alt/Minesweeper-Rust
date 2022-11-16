@@ -33,26 +33,14 @@ fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
         r#"  \/_/  \/_/ \/_/ \/_/ \/_/ \/_____/ \/_____/ \/_/   \/_/ \/_____/ \/_____/ \/_/    \/_____/ \/_/ /_/"#,
     ];
     let menu_items: HashMap<u16, MenuItem> = HashMap::from([
-        (
-            8,
-            (
-                "Easy: 9x9 and 10 bombs",
-                MenuCommand::Play(9, 9, 10),
-            ),
-        ),
+        (8, ("Easy: 9x9 and 10 bombs", MenuCommand::Play(9, 9, 10))),
         (
             9,
-            (
-                "Medimum: 16x16 and 40 bombs",
-                MenuCommand::Play(16, 16, 40),
-            ),
+            ("Medimum: 16x16 and 40 bombs", MenuCommand::Play(16, 16, 40)),
         ),
         (
             10,
-            (
-                "Hard: 30x16 and 99 bombs",
-                MenuCommand::Play(30, 16, 99),
-            ),
+            ("Hard: 30x16 and 99 bombs", MenuCommand::Play(30, 16, 99)),
         ),
         (
             11,
@@ -119,7 +107,9 @@ fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
         }
     }
     match n {
-        MenuCommand::Play(width, height, bombs) => game_loop(stdin, stdout, Board::new(width, height, bombs).unwrap()),
+        MenuCommand::Play(width, height, bombs) => {
+            game_loop(stdin, stdout, Board::new(width, height, bombs).unwrap())
+        }
         MenuCommand::Quit => {}
     }
 }

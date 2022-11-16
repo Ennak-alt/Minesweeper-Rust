@@ -1,6 +1,11 @@
 use rand::Rng;
 use std::io::{Stdout, Write};
-use termion::{color::{self, Color}, cursor::HideCursor, input::MouseTerminal, raw::RawTerminal};
+use termion::{
+    color::{self, Color},
+    cursor::HideCursor,
+    input::MouseTerminal,
+    raw::RawTerminal,
+};
 
 pub type Term = HideCursor<MouseTerminal<RawTerminal<Stdout>>>;
 
@@ -242,14 +247,7 @@ impl Board {
 
     pub fn print_num_clr(stdout: &mut Term, num: usize) {
         fn write_num<C: Color + Copy>(stdout: &mut Term, num: usize, color: C) {
-            write!(
-                stdout,
-                "{}{:2}{}",
-                color::Fg(color),
-                num,
-                color::Fg(color)
-            )
-            .unwrap()
+            write!(stdout, "{}{:2}{}", color::Fg(color), num, color::Fg(color)).unwrap()
         }
         match num {
             0 => write!(stdout, "  ",).unwrap(),
