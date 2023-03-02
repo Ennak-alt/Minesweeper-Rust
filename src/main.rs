@@ -7,7 +7,6 @@ use termion::event::{Event, Key, MouseButton, MouseEvent};
 use termion::input::{MouseTerminal, TermRead};
 use termion::raw::IntoRawMode;
 use termion::terminal_size;
-
 fn main() {
     let mut stdin = stdin();
     let mut stdout =
@@ -33,6 +32,7 @@ fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
         r#"  \/_/  \/_/ \/_/ \/_/ \/_/ \/_____/ \/_____/ \/_/   \/_/ \/_____/ \/_____/ \/_/    \/_____/ \/_/ /_/"#,
     ];
     let menu_items: HashMap<u16, MenuItem> = HashMap::from([
+        (6, ("Super easy 3x3 and 1 bomb", MenuCommand::Play(3, 3, 1))),
         (8, ("Easy: 9x9 and 10 bombs", MenuCommand::Play(9, 9, 10))),
         (
             9,
@@ -99,7 +99,7 @@ fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
                     {
                         n = h.1;
                         break;
-                    }
+                    }    
                 }
                 _ => (),
             },
@@ -134,6 +134,18 @@ fn game_loop(stdin: &mut Stdin, stdout: &mut Term, mut board: Board) {
                                 write!(
                                     stdout,
                                     "You lost {}",
+                                    termion::cursor::Goto(1, board.height as u16 + 2)
+                                )
+                                .unwrap();
+                                stdout.flush().unwrap();
+                                break;
+                            }
+                            if board.is_win() {
+                                board.all_fields_visible();
+                                board.print_board(stdout);
+                                write!(
+                                    stdout,
+                                    "You Won {}",
                                     termion::cursor::Goto(1, board.height as u16 + 2)
                                 )
                                 .unwrap();

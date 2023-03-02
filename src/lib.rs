@@ -38,6 +38,8 @@ pub struct Board {
     board: Vec<Vec<Field>>,
     pub width: usize,
     pub height: usize,
+    bombs: usize,
+    fields_cleared: usize,
 }
 
 impl Board {
@@ -77,6 +79,7 @@ impl Board {
     }
 
     fn update_field_vis(&mut self, pos: Position, vis: Visibility) -> Result<(), &'static str> {
+        self.fields_cleared += 1;
         self.update_field(
             pos,
             Field {
@@ -125,23 +128,7 @@ impl Board {
         match field_type {
             Some(FieldType::SafeField(0)) => {
                 self.update_field_vis(pos, Visibility::Visible).unwrap();
-                fn show_zero_fields(board: &mut Board, pos: Position) {
-                    match board.get_field_type(pos) {
-                        Some(FieldType::SafeField(0)) => {
-                            board.update_field_vis(pos, Visibility::Visible).unwrap();
-                            for a_pos in board.get_fields_around(pos) {
-                                if let Some(Visibility::Hidden) = board.get_field_vis(a_pos) {
-                                    show_zero_fields(board, a_pos);
-                                }
-                            }
-                        }
-                        Some(FieldType::SafeField(_)) => {
-                            board.update_field_vis(pos, Visibility::Visible).unwrap();
-                        }
-                        _ => {}
-                    }
-                }
-                show_zero_fields(self, pos);
+                Self::show_zero_fields(self, pos);
             }
             Some(FieldType::BombField) | Some(FieldType::SafeField(_)) => {
                 self.update_field_vis(pos, Visibility::Visible).unwrap();
@@ -149,6 +136,30 @@ impl Board {
             None => {}
         }
         field_type
+    }
+
+    fn show_zero_fields(board: &mut Board, pos: Position) {
+        match board.get_field_type(pos) {
+            Some(FieldType::SafeField(0)) => {
+                board.update_field_vis(pos, Visibility::Visible).unwrap();
+                for a_pos in board.get_fields_around(pos) {
+                    if let Some(Visibility::Hidden) = board.get_field_vis(a_pos) {
+                        Self::show_zero_fields(board, a_pos);
+                    }
+                }
+            }
+            Some(FieldType::SafeField(_)) => {
+                board.update_field_vis(pos, Visibility::Visible).unwrap();
+            }
+            _ => {}
+        }
+    }
+
+    pub fn is_win(&self) -> bool {
+        if self.fields_cleared == self.height * self.width - self.bombs {
+            return true;
+        }
+        return false;
     }
 
     pub fn all_fields_visible(&mut self) {
@@ -177,6 +188,8 @@ impl Board {
             ],
             width: width,
             height: height,
+            bombs: bombs,
+            fields_cleared: 0,
         };
         let mut rng = rand::thread_rng();
 
@@ -232,11 +245,11 @@ impl Board {
                         field_type: _,
                     } => write!(stdout, "⬜️").unwrap(),
                     Field {
-                        visibility: _,
+                        visibility: Visibility::Visible,
                         field_type: FieldType::BombField,
                     } => write!(stdout, "💣").unwrap(),
                     Field {
-                        visibility: _,
+                        visibility: Visibility::Visible,
                         field_type: FieldType::SafeField(n),
                     } => Self::print_num_clr(stdout, n as usize),
                 }
@@ -247,7 +260,14 @@ impl Board {
 
     pub fn print_num_clr(stdout: &mut Term, num: usize) {
         fn write_num<C: Color + Copy>(stdout: &mut Term, num: usize, color: C) {
-            write!(stdout, "{}{:2}{}", color::Fg(color), num, color::Fg(color)).unwrap()
+            write!(
+                stdout,
+                "{}{:2}{}",
+                color::Fg(color),
+                num,
+                color::Fg(color::Reset)
+            )
+            .unwrap()
         }
         match num {
             0 => write!(stdout, "  ",).unwrap(),
@@ -260,6 +280,23 @@ impl Board {
             7 => write_num(stdout, num, color::White),
             8 => write_num(stdout, num, color::Yellow),
             _ => write!(stdout, "{:2}", num).unwrap(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::Board;
+
+    #[test]
+    fn create_new_valid_board() {
+        let board = Board::new(8, 8, 10).unwrap();
+        let mut bomb_count = 0;
+        for r in 0..board.height {
+            for c in 0..board.width {
+                board.get_field(pos)
+            }
         }
     }
 }
