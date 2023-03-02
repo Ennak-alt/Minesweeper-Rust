@@ -7,13 +7,7 @@ use termion::event::{Event, Key, MouseButton, MouseEvent};
 use termion::input::{MouseTerminal, TermRead};
 use termion::raw::IntoRawMode;
 use termion::terminal_size;
-fn main() {
-    let mut stdin = stdin();
-    let mut stdout =
-        termion::cursor::HideCursor::from(MouseTerminal::from(stdout().into_raw_mode().unwrap()));
-    start_menu(&mut stdin, &mut stdout);
-    //game_loop(&mut stdin, &mut stdout, Board::new(9, 9, 10).unwrap())
-}
+
 
 #[derive(Debug, Clone, Copy)]
 enum MenuCommand {
@@ -22,6 +16,14 @@ enum MenuCommand {
 }
 
 type MenuItem = (&'static str, MenuCommand);
+
+fn main() {
+    let mut stdin = stdin();
+    let mut stdout =
+        termion::cursor::HideCursor::from(MouseTerminal::from(stdout().into_raw_mode().unwrap()));
+    start_menu(&mut stdin, &mut stdout);
+    //game_loop(&mut stdin, &mut stdout, Board::new(9, 9, 10).unwrap())
+}
 
 fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
     let s = [
