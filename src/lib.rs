@@ -69,17 +69,22 @@ impl Board {
     }
 
     fn update_field(&mut self, pos: Position, new_field: Field) -> Result<(), &'static str> {
+        if let Visibility::Visible = new_field.visibility {
+            self.fields_cleared += 1;
+        }
         *(self
             .board
             .get_mut(pos.row)
             .ok_or("row index out of bounds.")?
             .get_mut(pos.col)
-            .ok_or("collumn index out of bounds.")?) = new_field;
+            .ok_or("collumn index out of bounds.")?) = new_field; 
         Ok(())
     }
 
-    fn update_field_vis(&mut self, pos: Position, vis: Visibility) -> Result<(), &'static str> {
-        self.fields_cleared += 1;
+    fn update_field_vis(&mut self, pos: Position, vis: Visibility) -> Result<(), &'static str> { 
+        if let Visibility::Visible = vis {
+            self.fields_cleared += 1;
+        }
         self.update_field(
             pos,
             Field {
@@ -156,7 +161,7 @@ impl Board {
     }
 
     pub fn is_win(&self) -> bool {
-        if self.fields_cleared == self.height * self.width - self.bombs {
+        if self.fields_cleared >= self.height * self.width - self.bombs {
             return true;
         }
         return false;
