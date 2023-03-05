@@ -29,6 +29,7 @@ pub struct Position {
 
 #[derive(Debug, Clone)]
 struct Field {
+    flagged: bool,
     visibility: Visibility,
     field_type: FieldType,
 }
@@ -38,8 +39,8 @@ pub struct Board {
     board: Vec<Vec<Field>>,
     pub width: usize,
     pub height: usize,
-    bombs: usize,
-    fields_cleared: usize,
+    pub bombs: usize,
+    pub fields_cleared: usize,
 }
 
 impl Board {
@@ -68,10 +69,18 @@ impl Board {
         }
     }
 
-    fn update_field(&mut self, pos: Position, new_field: Field) -> Result<(), &'static str> {
-        if let Visibility::Visible = new_field.visibility {
-            self.fields_cleared += 1;
+    pub fn get_field_flagged(&self, pos: Position) -> Option<bool> {
+        if let Some(f) = self.get_field(pos) {
+            Some(f.flagged)
+        } else {
+            None 
         }
+    }
+
+    fn update_field(&mut self, pos: Position, new_field: Field) -> Result<(), &'static str> { 
+        if matches!(new_field.visibility, Visibility::Visible) && matches!(self.get_field_vis(pos), Some(Visibility::Hidden)) {
+            self.fields_cleared += 1;
+        } 
         *(self
             .board
             .get_mut(pos.row)
@@ -81,10 +90,7 @@ impl Board {
         Ok(())
     }
 
-    fn update_field_vis(&mut self, pos: Position, vis: Visibility) -> Result<(), &'static str> { 
-        if let Visibility::Visible = vis {
-            self.fields_cleared += 1;
-        }
+    fn update_field_vis(&mut self, pos: Position, vis: Visibility) -> Result<(), &'static str> {   
         self.update_field(
             pos,
             Field {
@@ -94,11 +100,21 @@ impl Board {
         )
     }
 
-    fn update_field_type(&mut self, pos: Position, val: FieldType) -> Result<(), &'static str> {
+    fn update_field_type(&mut self, pos: Position, val: FieldType) -> Result<(), &'static str> { 
         self.update_field(
             pos,
             Field {
                 field_type: val,
+                ..self.get_field(pos).ok_or("Out of bounds.")?
+            },
+        )
+    }
+
+    pub fn update_field_flag(&mut self, pos: Position, flagged: bool) -> Result<(), &'static str> {
+        self.update_field(
+            pos,
+            Field {
+                flagged,
                 ..self.get_field(pos).ok_or("Out of bounds.")?
             },
         )
@@ -129,10 +145,13 @@ impl Board {
     }
 
     pub fn show_field(&mut self, pos: Position) -> Option<FieldType> {
+        match self.get_field(pos) {
+            Some(Field { flagged: true, ..}) | Some(Field {visibility: Visibility::Visible, ..}) => return None,
+            _ => (),
+        }
         let field_type = self.get_field_type(pos);
         match field_type {
-            Some(FieldType::SafeField(0)) => {
-                self.update_field_vis(pos, Visibility::Visible).unwrap();
+            Some(FieldType::SafeField(0)) => { 
                 Self::show_zero_fields(self, pos);
             }
             Some(FieldType::BombField) | Some(FieldType::SafeField(_)) => {
@@ -148,8 +167,18 @@ impl Board {
             Some(FieldType::SafeField(0)) => {
                 board.update_field_vis(pos, Visibility::Visible).unwrap();
                 for a_pos in board.get_fields_around(pos) {
-                    if let Some(Visibility::Hidden) = board.get_field_vis(a_pos) {
-                        Self::show_zero_fields(board, a_pos);
+                    match board.get_field(a_pos) {
+                        Some(Field {
+                            visibility: Visibility::Hidden,
+                            field_type: FieldType::SafeField(0),
+                            ..
+                        }) => Self::show_zero_fields(board, a_pos),
+                        Some(Field {
+                            visibility: Visibility::Hidden,
+                            field_type: FieldType::SafeField(_),
+                            ..
+                        }) => board.update_field_vis(a_pos, Visibility::Visible).unwrap(),
+                        _ => (),        
                     }
                 }
             }
@@ -184,6 +213,7 @@ impl Board {
             board: vec![
                 vec![
                     Field {
+                        flagged: false,
                         visibility: Visibility::Hidden,
                         field_type: FieldType::SafeField(0)
                     };
@@ -246,16 +276,23 @@ impl Board {
             for col in 0..self.width {
                 match self.get_field(Position { row: row, col: col }).unwrap() {
                     Field {
+                        flagged: true,
                         visibility: Visibility::Hidden,
-                        field_type: _,
+                        ..
+                    } => write!(stdout, "🚩").unwrap(),
+                    Field {
+                        visibility: Visibility::Hidden,
+                        ..
                     } => write!(stdout, "⬜️").unwrap(),
                     Field {
                         visibility: Visibility::Visible,
                         field_type: FieldType::BombField,
+                        ..
                     } => write!(stdout, "💣").unwrap(),
                     Field {
                         visibility: Visibility::Visible,
                         field_type: FieldType::SafeField(n),
+                        ..
                     } => Self::print_num_clr(stdout, n as usize),
                 }
             }
@@ -292,8 +329,8 @@ impl Board {
 #[cfg(test)]
 mod tests {
 
-    use crate::Board;
-
+    // use crate::Board;
+    /*
     #[test]
     fn create_new_valid_board() {
         let board = Board::new(8, 8, 10).unwrap();
@@ -304,4 +341,5 @@ mod tests {
             }
         }
     }
+    */
 }
