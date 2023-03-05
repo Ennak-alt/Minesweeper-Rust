@@ -27,31 +27,29 @@ fn main() {
 
 fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
     let s = [
-        r#" __    __   __   __   __   ______   ______   __     __   ______   ______   ______  ______   ______   "#,
-        r#"/\ "-./  \ /\ \ /\ "-.\ \ /\  ___\ /\  ___\ /\ \  _ \ \ /\  ___\ /\  ___\ /\  == \/\  ___\ /\  == \  "#,
-        r#"\ \ \-./\ \\ \ \\ \ \-.  \\ \  __\ \ \___  \\ \ \/ ".\ \\ \  __\ \ \  __\ \ \  _-/\ \  __\ \ \  __<  "#,
-        r#" \ \_\ \ \_\\ \_\\ \_\\"\_\\ \_____\\/\_____\\ \__/".~\_\\ \_____\\ \_____\\ \_\   \ \_____\\ \_\ \_\"#,
-        r#"  \/_/  \/_/ \/_/ \/_/ \/_/ \/_____/ \/_____/ \/_/   \/_/ \/_____/ \/_____/ \/_/    \/_____/ \/_/ /_/"#,
+        r#"   .  .                               "#, 
+        r#"   |\/|*._  _  __.    , _  _ ._  _ ._."#,
+        r#"   |  ||[ )(/,_)  \/\/ (/,(/,[_)(/,[  "#, 
+        r#"                             |        "#,
     ];
     let menu_items: HashMap<u16, MenuItem> = HashMap::from([
-        (6, ("Super easy 3x3 and 1 bomb", MenuCommand::Play(3, 3, 1))),
-        (8, ("Easy: 9x9 and 10 bombs", MenuCommand::Play(9, 9, 10))),
+        (5, ("Easy: 9x9 and 10 bombs", MenuCommand::Play(9, 9, 10))),
         (
-            9,
+            6,
             ("Medimum: 16x16 and 40 bombs", MenuCommand::Play(16, 16, 40)),
         ),
         (
-            10,
+            7,
             ("Hard: 30x16 and 99 bombs", MenuCommand::Play(30, 16, 99)),
         ),
         (
-            11,
+            8,
             (
                 "Extreme: 24x30 and 180 bombs",
                 MenuCommand::Play(24, 30, 180),
             ),
         ),
-        (12, ("Quit", MenuCommand::Quit)),
+        (10, ("Quit", MenuCommand::Quit)),
     ]);
     write!(
         stdout,
@@ -67,7 +65,7 @@ fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
             "{}{}",
             termion::cursor::Goto(
                 (terminal_size().unwrap().0 as u16 - item.len() as u16) / 2,
-                i + (terminal_size().unwrap().1 as u16) / 3
+                i + (terminal_size().unwrap().1 as u16) / 3 - 1
             ),
             item
         )
