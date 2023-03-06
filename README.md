@@ -14,8 +14,3 @@ With cargo, use:
 cargo run
 ```
 
-# Todo list
-- [] Make board centered
-- [] Recover from terminal size errors
-- [] Make it able to win
-- [] Add way to go back after losing
