@@ -73,24 +73,26 @@ impl Board {
         if let Some(f) = self.get_field(pos) {
             Some(f.flagged)
         } else {
-            None 
+            None
         }
     }
 
-    fn update_field(&mut self, pos: Position, new_field: Field) -> Result<(), &'static str> { 
-        if matches!(new_field.visibility, Visibility::Visible) && matches!(self.get_field_vis(pos), Some(Visibility::Hidden)) {
+    fn update_field(&mut self, pos: Position, new_field: Field) -> Result<(), &'static str> {
+        if matches!(new_field.visibility, Visibility::Visible)
+            && matches!(self.get_field_vis(pos), Some(Visibility::Hidden))
+        {
             self.fields_cleared += 1;
-        } 
+        }
         *(self
             .board
             .get_mut(pos.row)
             .ok_or("row index out of bounds.")?
             .get_mut(pos.col)
-            .ok_or("collumn index out of bounds.")?) = new_field; 
+            .ok_or("collumn index out of bounds.")?) = new_field;
         Ok(())
     }
 
-    fn update_field_vis(&mut self, pos: Position, vis: Visibility) -> Result<(), &'static str> {   
+    fn update_field_vis(&mut self, pos: Position, vis: Visibility) -> Result<(), &'static str> {
         self.update_field(
             pos,
             Field {
@@ -100,7 +102,7 @@ impl Board {
         )
     }
 
-    fn update_field_type(&mut self, pos: Position, val: FieldType) -> Result<(), &'static str> { 
+    fn update_field_type(&mut self, pos: Position, val: FieldType) -> Result<(), &'static str> {
         self.update_field(
             pos,
             Field {
@@ -146,12 +148,16 @@ impl Board {
 
     pub fn show_field(&mut self, pos: Position) -> Option<FieldType> {
         match self.get_field(pos) {
-            Some(Field { flagged: true, ..}) | Some(Field {visibility: Visibility::Visible, ..}) => return None,
+            Some(Field { flagged: true, .. })
+            | Some(Field {
+                visibility: Visibility::Visible,
+                ..
+            }) => return None,
             _ => (),
         }
         let field_type = self.get_field_type(pos);
         match field_type {
-            Some(FieldType::SafeField(0)) => { 
+            Some(FieldType::SafeField(0)) => {
                 Self::show_zero_fields(self, pos);
             }
             Some(FieldType::BombField) | Some(FieldType::SafeField(_)) => {
@@ -178,7 +184,7 @@ impl Board {
                             field_type: FieldType::SafeField(_),
                             ..
                         }) => board.update_field_vis(a_pos, Visibility::Visible).unwrap(),
-                        _ => (),        
+                        _ => (),
                     }
                 }
             }

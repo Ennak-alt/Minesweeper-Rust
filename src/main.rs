@@ -8,7 +8,6 @@ use termion::input::{MouseTerminal, TermRead};
 use termion::raw::IntoRawMode;
 use termion::terminal_size;
 
-
 #[derive(Debug, Clone, Copy)]
 enum MenuCommand {
     Play(usize, usize, usize),
@@ -27,9 +26,9 @@ fn main() {
 
 fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
     let s = [
-        r#"   .  .                               "#, 
+        r#"   .  .                               "#,
         r#"   |\/|*._  _  __.    , _  _ ._  _ ._."#,
-        r#"   |  ||[ )(/,_)  \/\/ (/,(/,[_)(/,[  "#, 
+        r#"   |  ||[ )(/,_)  \/\/ (/,(/,[_)(/,[  "#,
         r#"                             |        "#,
     ];
     let menu_items: HashMap<u16, MenuItem> = HashMap::from([
@@ -99,7 +98,7 @@ fn start_menu(stdin: &mut Stdin, stdout: &mut Term) {
                     {
                         n = h.1;
                         break;
-                    }    
+                    }
                 }
                 _ => (),
             },
@@ -124,18 +123,21 @@ fn game_loop(stdin: &mut Stdin, stdout: &mut Term, mut board: Board) {
             Event::Mouse(me) => {
                 match me {
                     MouseEvent::Press(MouseButton::Right, x, y) => {
-                        if let Some(flagged) = board.get_field_flagged(Position { 
+                        if let Some(flagged) = board.get_field_flagged(Position {
                             row: (y - 1) as usize,
                             col: ((x - 1) / 2) as usize,
                         }) {
-                            match board.update_field_flag(Position {
-                                row: (y - 1) as usize,
-                                col: ((x - 1) / 2) as usize,
-                            }, !flagged) { 
-                                _ => (), 
+                            match board.update_field_flag(
+                                Position {
+                                    row: (y - 1) as usize,
+                                    col: ((x - 1) / 2) as usize,
+                                },
+                                !flagged,
+                            ) {
+                                _ => (),
                             }
                         }
-                    },
+                    }
                     MouseEvent::Press(MouseButton::Left, x, y) => {
                         if let Some(field_type) = board.show_field(Position {
                             row: (y - 1) as usize,
@@ -147,13 +149,14 @@ fn game_loop(stdin: &mut Stdin, stdout: &mut Term, mut board: Board) {
                                 write!(
                                     stdout,
                                     "{} You lost {}",
-                                    board.fields_cleared, termion::cursor::Goto(1, board.height as u16 + 2)
+                                    board.fields_cleared,
+                                    termion::cursor::Goto(1, board.height as u16 + 2)
                                 )
                                 .unwrap();
                                 stdout.flush().unwrap();
                                 break;
                             }
-                            
+
                             if board.is_win() {
                                 board.all_fields_visible();
                                 board.print_board(stdout);
@@ -166,12 +169,12 @@ fn game_loop(stdin: &mut Stdin, stdout: &mut Term, mut board: Board) {
                                 stdout.flush().unwrap();
                                 break;
                             }
-                            
                         }
                     }
                     _ => (),
                 }
                 board.print_board(stdout);
+                // write!(stdout, "Fields cleared: {}", board.fields_cleared).unwrap();
             }
             _ => {}
         }
