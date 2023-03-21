@@ -14,3 +14,5 @@ With cargo, use:
 cargo run
 ```
 
+![Snake Demo](demo.gif)
+
