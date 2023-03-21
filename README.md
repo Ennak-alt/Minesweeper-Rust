@@ -14,5 +14,5 @@ With cargo, use:
 cargo run
 ```
 
-![Snake Demo](demo.gif)
+![Minesweeper Demo](demo.gif)
 
